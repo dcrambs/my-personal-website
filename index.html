@@ -1,96 +1,93 @@
-import random
-import time
+import pygame
+import math
 
-class SlotMachine:
-    def __init__(self):
-        self.reels = [
-            ['😔', '🙀', '🤓', '☺️', '😜', '😒', '😢', '🥸', '🤩'],
-            ['😔', '🙀', '🤓', '☺️', '😜', '😒', '😢', '🥸', '🤩'],
-            ['😔', '🙀', '🤓', '☺️', '😜', '😒', '😢', '🥸', '🤩']
-        ]
-        self.balance = 1000
-        self.bet = 10
-        self.paylines = [
-            [0, 0, 0],  # Top row
-            [1, 1, 1],  # Middle row
-            [2, 2, 2],  # Bottom row
-            [0, 1, 2],  # Diagonal from top left
-            [2, 1, 0]   # Diagonal from top right
-        ]
-        self.symbol_values = {
-            '😔': 10,
-            '🙀': 20,
-            '🤓': 30,
-            '☺️': 40,
-            '😜': 50,
-            '😒': 100,
-            '😢': 200,
-            '🥸': 500,
-            '🤩': 1000
-        }
+# Initialize pygame
+pygame.init()
 
-    def spin(self):
-        """Simulate a spin of the slot machine."""
-        result = []
-        for reel in self.reels:
-            result.append(random.choice(reel))
-        return result
+# Screen dimensions
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption('First-Person Car Driving Simulator')
 
-    def check_win(self, spin_result):
-        """Check if the spin result matches any winning payline."""
-        total_win = 0
-        for payline in self.paylines:
-            line = [spin_result[payline[0]], spin_result[payline[1]], spin_result[payline[2]]]
-            if line[0] == line[1] == line[2]:
-                total_win += self.symbol_values.get(line[0], 0) * 2  # Payline win (double the symbol value)
-        return total_win
+# Define colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
-    def play(self):
-        """Main function to run the slot machine game."""
-        while True:
-            print(f"\nBalance: ${self.balance}")
-            print(f"Current Bet: ${self.bet}")
-            print("Spin the wheels!")
-            input("Press Enter to spin...")
+# Car class
+class Car:
+    def __init__(self, x, y, angle):
+        self.x = x
+        self.y = y
+        self.angle = angle  # Angle in degrees
+        self.speed = 0
+        self.image = pygame.Surface((50, 30))
+        self.image.fill(RED)
+        self.original_image = self.image
+        self.rect = self.image.get_rect(center=(self.x, self.y))
 
-            # Spin the reels and show the result
-            spin_result = self.spin()
-            print("Spin result:", " | ".join(spin_result))
+    def move(self):
+        # Move car forward or backward
+        rad = math.radians(self.angle)
+        self.x += self.speed * math.cos(rad)
+        self.y -= self.speed * math.sin(rad)
+        self.rect.center = (self.x, self.y)
 
-            # Check for winnings
-            winnings = self.check_win(spin_result)
-            self.balance += winnings - self.bet  # Deduct the bet and add winnings
+    def turn(self, direction):
+        # Turn car left or right
+        self.angle += direction
+        self.angle = self.angle % 360
+        self.image = pygame.transform.rotate(self.original_image, -self.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
 
-            if winnings > 0:
-                print(f"You won ${winnings}!")
-            else:
-                print("No win this time.")
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
-            # Ask if the player wants to play again
-            if self.balance <= 0:
-                print("\nYou have run out of money!")
-                break
+# Initialize car
+car = Car(WIDTH // 2, HEIGHT // 2, 0)
 
-            play_again = input("Do you want to play again? (y/n): ").lower()
-            if play_again != 'y':
-                break
+# Game loop
+running = True
+clock = pygame.time.Clock()
 
-            # Optionally allow the user to adjust the bet
-            self.bet = self.get_bet()
+# Game control variables
+car_speed = 0
+turn_speed = 5  # Degrees per key press
 
-    def get_bet(self):
-        """Prompt the user to select a bet amount."""
-        while True:
-            try:
-                bet = int(input(f"Enter a bet amount (1 - {self.balance}): "))
-                if 1 <= bet <= self.balance:
-                    return bet
-                else:
-                    print("Bet must be between 1 and your current balance.")
-            except ValueError:
-                print("Please enter a valid number.")
+while running:
+    screen.fill(WHITE)
 
-# Running the game
-if __name__ == "__main__":
-    game = SlotMachine()
-    game.play()
+    # Event handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Key presses
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_UP]:
+        car_speed = 5
+    elif keys[pygame.K_DOWN]:
+        car_speed = -5
+    else:
+        car_speed = 0
+
+    if keys[pygame.K_LEFT]:
+        car.turn(turn_speed)
+    elif keys[pygame.K_RIGHT]:
+        car.turn(-turn_speed)
+
+    # Update car's position and angle
+    car.speed = car_speed
+    car.move()
+
+    # Draw the car
+    car.draw(screen)
+
+    # Update the screen
+    pygame.display.flip()
+
+    # Limit frames per second
+    clock.tick(60)
+
+# Quit pygame
+pygame.quit()
