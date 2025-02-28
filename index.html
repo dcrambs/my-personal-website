@@ -1,0 +1,96 @@
+import random
+import time
+
+class SlotMachine:
+    def __init__(self):
+        self.reels = [
+            ['😔', '🙀', '🤓', '☺️', '😜', '😒', '😢', '🥸', '🤩'],
+            ['😔', '🙀', '🤓', '☺️', '😜', '😒', '😢', '🥸', '🤩'],
+            ['😔', '🙀', '🤓', '☺️', '😜', '😒', '😢', '🥸', '🤩']
+        ]
+        self.balance = 1000
+        self.bet = 10
+        self.paylines = [
+            [0, 0, 0],  # Top row
+            [1, 1, 1],  # Middle row
+            [2, 2, 2],  # Bottom row
+            [0, 1, 2],  # Diagonal from top left
+            [2, 1, 0]   # Diagonal from top right
+        ]
+        self.symbol_values = {
+            '😔': 10,
+            '🙀': 20,
+            '🤓': 30,
+            '☺️': 40,
+            '😜': 50,
+            '😒': 100,
+            '😢': 200,
+            '🥸': 500,
+            '🤩': 1000
+        }
+
+    def spin(self):
+        """Simulate a spin of the slot machine."""
+        result = []
+        for reel in self.reels:
+            result.append(random.choice(reel))
+        return result
+
+    def check_win(self, spin_result):
+        """Check if the spin result matches any winning payline."""
+        total_win = 0
+        for payline in self.paylines:
+            line = [spin_result[payline[0]], spin_result[payline[1]], spin_result[payline[2]]]
+            if line[0] == line[1] == line[2]:
+                total_win += self.symbol_values.get(line[0], 0) * 2  # Payline win (double the symbol value)
+        return total_win
+
+    def play(self):
+        """Main function to run the slot machine game."""
+        while True:
+            print(f"\nBalance: ${self.balance}")
+            print(f"Current Bet: ${self.bet}")
+            print("Spin the wheels!")
+            input("Press Enter to spin...")
+
+            # Spin the reels and show the result
+            spin_result = self.spin()
+            print("Spin result:", " | ".join(spin_result))
+
+            # Check for winnings
+            winnings = self.check_win(spin_result)
+            self.balance += winnings - self.bet  # Deduct the bet and add winnings
+
+            if winnings > 0:
+                print(f"You won ${winnings}!")
+            else:
+                print("No win this time.")
+
+            # Ask if the player wants to play again
+            if self.balance <= 0:
+                print("\nYou have run out of money!")
+                break
+
+            play_again = input("Do you want to play again? (y/n): ").lower()
+            if play_again != 'y':
+                break
+
+            # Optionally allow the user to adjust the bet
+            self.bet = self.get_bet()
+
+    def get_bet(self):
+        """Prompt the user to select a bet amount."""
+        while True:
+            try:
+                bet = int(input(f"Enter a bet amount (1 - {self.balance}): "))
+                if 1 <= bet <= self.balance:
+                    return bet
+                else:
+                    print("Bet must be between 1 and your current balance.")
+            except ValueError:
+                print("Please enter a valid number.")
+
+# Running the game
+if __name__ == "__main__":
+    game = SlotMachine()
+    game.play()
