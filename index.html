@@ -1,93 +1,102 @@
+pip install pygame
 import pygame
-import math
+import random
 
 # Initialize pygame
 pygame.init()
 
 # Screen dimensions
-WIDTH, HEIGHT = 800, 600
+WIDTH = 800
+HEIGHT = 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('First-Person Car Driving Simulator')
+pygame.display.set_caption("Drift Boss")
 
-# Define colors
+# Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
+GREEN = (0, 255, 0)
 
 # Car class
-class Car:
-    def __init__(self, x, y, angle):
-        self.x = x
-        self.y = y
-        self.angle = angle  # Angle in degrees
-        self.speed = 0
-        self.image = pygame.Surface((50, 30))  # Simple rectangle representing the car
+class Car(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface((50, 30))
         self.image.fill(RED)
-        self.original_image = self.image
-        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.rect = self.image.get_rect()
+        self.rect.center = (WIDTH // 2, HEIGHT - 100)
+        self.speed = 5
+        self.dx = 0
 
-    def move(self):
-        # Move car forward or backward
-        rad = math.radians(self.angle)
-        self.x += self.speed * math.cos(rad)
-        self.y -= self.speed * math.sin(rad)
-        self.rect.center = (self.x, self.y)
+    def update(self):
+        self.rect.x += self.dx
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > WIDTH:
+            self.rect.right = WIDTH
 
-    def turn(self, direction):
-        # Turn car left or right
-        self.angle += direction
-        self.angle = self.angle % 360
-        self.image = pygame.transform.rotate(self.original_image, -self.angle)
-        self.rect = self.image.get_rect(center=self.rect.center)
+    def move_left(self):
+        self.dx = -self.speed
+
+    def move_right(self):
+        self.dx = self.speed
+
+    def stop(self):
+        self.dx = 0
+
+# Road class
+class Road:
+    def __init__(self):
+        self.width = 300
+        self.x = (WIDTH - self.width) // 2
+        self.y = 0
+        self.height = HEIGHT
+        self.color = GREEN
 
     def draw(self, screen):
-        screen.blit(self.image, self.rect)
-
-# Initialize car
-car = Car(WIDTH // 2, HEIGHT // 2, 0)
+        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
 
 # Game loop
-running = True
-clock = pygame.time.Clock()
+def game_loop():
+    running = True
+    clock = pygame.time.Clock()
+    car = Car()
+    all_sprites = pygame.sprite.Group(car)
 
-# Game control variables
-car_speed = 0
-turn_speed = 5  # Degrees per key press
+    road = Road()
 
-while running:
-    screen.fill(WHITE)
+    while running:
+        screen.fill(WHITE)
 
-    # Event handling
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        # Draw the road
+        road.draw(screen)
+
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    car.move_left()
+                elif event.key == pygame.K_RIGHT:
+                    car.move_right()
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    car.stop()
+
+        # Update game state
+        all_sprites.update()
+
+        # Check if the car is off the road
+        if car.rect.left < road.x or car.rect.right > road.x + road.width:
             running = False
 
-    # Key presses
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_UP]:
-        car_speed = 5  # Move forward
-    elif keys[pygame.K_DOWN]:
-        car_speed = -5  # Move backward
-    else:
-        car_speed = 0  # Stop moving
+        # Draw all sprites
+        all_sprites.draw(screen)
 
-    if keys[pygame.K_LEFT]:
-        car.turn(turn_speed)  # Turn left
-    elif keys[pygame.K_RIGHT]:
-        car.turn(-turn_speed)  # Turn right
+        pygame.display.flip()
+        clock.tick(60)
 
-    # Update car's position and angle
-    car.speed = car_speed
-    car.move()
-
-    # Draw the car
-    car.draw(screen)
-
-    # Update the screen
-    pygame.display.flip()
-
-    # Limit frames per second
-    clock.tick(60)
-
-# Quit pygame
+# Start the game
+game_loop()
 pygame.quit()
