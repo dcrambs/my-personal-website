@@ -1,102 +1,86 @@
-pip install pygame
-import pygame
 import random
 
-# Initialize pygame
-pygame.init()
+# Define card values and suits
+suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
+ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
+values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'Jack': 10, 'Queen': 10, 'King': 10, 'Ace': 11}
 
-# Screen dimensions
-WIDTH = 800
-HEIGHT = 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Drift Boss")
+# Create a deck of cards
+def create_deck():
+    deck = []
+    for suit in suits:
+        for rank in ranks:
+            deck.append((rank, suit))
+    random.shuffle(deck)
+    return deck
 
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
+# Calculate the total score of a hand
+def calculate_score(hand):
+    score = 0
+    aces = 0
+    for card in hand:
+        score += values[card[0]]
+        if card[0] == 'Ace':
+            aces += 1
+    
+    # Adjust for Aces if score is over 21
+    while score > 21 and aces:
+        score -= 10
+        aces -= 1
+    
+    return score
 
-# Car class
-class Car(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.Surface((50, 30))
-        self.image.fill(RED)
-        self.rect = self.image.get_rect()
-        self.rect.center = (WIDTH // 2, HEIGHT - 100)
-        self.speed = 5
-        self.dx = 0
+# Deal initial cards
+def deal_initial_cards(deck):
+    return [deck.pop(), deck.pop()]
 
-    def update(self):
-        self.rect.x += self.dx
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > WIDTH:
-            self.rect.right = WIDTH
+# Show the cards
+def show_hand(player, hand):
+    print(f"{player}'s hand: ", [f"{rank} of {suit}" for rank, suit in hand], "-> Score:", calculate_score(hand))
 
-    def move_left(self):
-        self.dx = -self.speed
+# Main game loop
+def play_blackjack():
+    deck = create_deck()
 
-    def move_right(self):
-        self.dx = self.speed
+    # Deal hands
+    player_hand = deal_initial_cards(deck)
+    dealer_hand = deal_initial_cards(deck)
 
-    def stop(self):
-        self.dx = 0
+    # Show hands
+    show_hand("Player", player_hand)
+    print("Dealer's hand: [", dealer_hand[0], "and hidden card]")
 
-# Road class
-class Road:
-    def __init__(self):
-        self.width = 300
-        self.x = (WIDTH - self.width) // 2
-        self.y = 0
-        self.height = HEIGHT
-        self.color = GREEN
+    # Player's turn
+    while calculate_score(player_hand) < 21:
+        move = input("Do you want to 'hit' or 'stand'? ").lower()
+        if move == 'hit':
+            player_hand.append(deck.pop())
+            show_hand("Player", player_hand)
+        elif move == 'stand':
+            break
+        else:
+            print("Invalid move. Please type 'hit' or 'stand'.")
 
-    def draw(self, screen):
-        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
+    # Dealer's turn
+    if calculate_score(player_hand) <= 21:
+        while calculate_score(dealer_hand) < 17:
+            dealer_hand.append(deck.pop())
+        show_hand("Dealer", dealer_hand)
 
-# Game loop
-def game_loop():
-    running = True
-    clock = pygame.time.Clock()
-    car = Car()
-    all_sprites = pygame.sprite.Group(car)
+    # Determine winner
+    player_score = calculate_score(player_hand)
+    dealer_score = calculate_score(dealer_hand)
 
-    road = Road()
+    if player_score > 21:
+        print("Player busts! Dealer wins!")
+    elif dealer_score > 21:
+        print("Dealer busts! Player wins!")
+    elif player_score > dealer_score:
+        print("Player wins!")
+    elif dealer_score > player_score:
+        print("Dealer wins!")
+    else:
+        print("It's a tie!")
 
-    while running:
-        screen.fill(WHITE)
-
-        # Draw the road
-        road.draw(screen)
-
-        # Handle events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    car.move_left()
-                elif event.key == pygame.K_RIGHT:
-                    car.move_right()
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                    car.stop()
-
-        # Update game state
-        all_sprites.update()
-
-        # Check if the car is off the road
-        if car.rect.left < road.x or car.rect.right > road.x + road.width:
-            running = False
-
-        # Draw all sprites
-        all_sprites.draw(screen)
-
-        pygame.display.flip()
-        clock.tick(60)
-
-# Start the game
-game_loop()
-pygame.quit()
+if __name__ == "__main__":
+    play_blackjack()
