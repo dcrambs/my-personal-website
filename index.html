@@ -1,91 +1,225 @@
-import random
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+        }
+        .cards {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .card {
+            margin: 5px;
+            padding: 10px;
+            border: 1px solid #ecf0f1;
+            border-radius: 5px;
+        }
+        .score {
+            font-size: 24px;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
 
-# Define card values and suits
-suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
-ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
-values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'Jack': 10, 'Queen': 10, 'King': 10, 'Ace': 11}
-
-# Create a deck of cards
-def create_deck():
-    deck = []
-    for suit in suits:
-        for rank in ranks:
-            deck.append((rank, suit))
-    random.shuffle(deck)
-    return deck
-
-# Calculate the total score of a hand
-def calculate_score(hand):
-    score = 0
-    aces = 0
-    for card in hand:
-        score += values[card[0]]
-        if card[0] == 'Ace':
-            aces += 1
+    <h1>Blackjack Game</h1>
     
-    # Adjust for Aces if score is over 21
-    while score > 21 and aces:
-        score -= 10
-        aces -= 1
-    
-    return score
+    <div id="player-hand" class="cards">
+        <h3>Player's Hand</h3>
+        <div id="player-cards"></div>
+        <div id="player-score" class="score">Score: 0</div>
+    </div>
 
-# Deal initial cards
-def deal_initial_cards(deck):
-    return [deck.pop(), deck.pop()]
+    <div id="dealer-hand" class="cards">
+        <h3>Dealer's Hand</h3>
+        <div id="dealer-cards"></div>
+        <div id="dealer-score" class="score">Score: 0</div>
+    </div>
 
-# Show the cards
-def show_hand(player, hand, reveal_dealer=False):
-    if player == "Dealer" and not reveal_dealer:
-        print(f"{player}'s hand: [", hand[0], "and hidden card]")
-    else:
-        print(f"{player}'s hand: ", [f"{rank} of {suit}" for rank, suit in hand], "-> Score:", calculate_score(hand))
+    <div class="buttons">
+        <button id="hit-button">Hit</button>
+        <button id="stand-button">Stand</button>
+    </div>
 
-# Main game loop
-def play_blackjack():
-    deck = create_deck()
+    <div id="game-result" style="margin-top: 20px;"></div>
 
-    # Deal hands
-    player_hand = deal_initial_cards(deck)
-    dealer_hand = deal_initial_cards(deck)
+    <script>
+        // Card values and suits
+        const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
+        const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace'];
+        const values = {
+            '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 
+            'Jack': 10, 'Queen': 10, 'King': 10, 'Ace': 11
+        };
 
-    # Show hands
-    show_hand("Player", player_hand)
-    show_hand("Dealer", dealer_hand, reveal_dealer=False)
+        let deck = [];
+        let playerHand = [];
+        let dealerHand = [];
+        let gameOver = false;
 
-    # Player's turn
-    while calculate_score(player_hand) < 21:
-        move = input("Do you want to 'hit' or 'stand'? ").lower()
-        if move == 'hit':
-            player_hand.append(deck.pop())
-            show_hand("Player", player_hand)
-        elif move == 'stand':
-            break
-        else:
-            print("Invalid move. Please type 'hit' or 'stand'.")
+        // Create and shuffle deck
+        function createDeck() {
+            deck = [];
+            for (let suit of suits) {
+                for (let rank of ranks) {
+                    deck.push({ rank, suit });
+                }
+            }
+            shuffleDeck();
+        }
 
-    # Dealer's turn (only if player hasn't busted)
-    if calculate_score(player_hand) <= 21:
-        print("Dealer's turn:")
-        show_hand("Dealer", dealer_hand, reveal_dealer=True)
-        while calculate_score(dealer_hand) < 17:
-            dealer_hand.append(deck.pop())
-            show_hand("Dealer", dealer_hand, reveal_dealer=True)
+        // Shuffle the deck
+        function shuffleDeck() {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
 
-    # Determine winner
-    player_score = calculate_score(player_hand)
-    dealer_score = calculate_score(dealer_hand)
+        // Deal a card to a player
+        function dealCard(hand) {
+            hand.push(deck.pop());
+        }
 
-    if player_score > 21:
-        print("Player busts! Dealer wins!")
-    elif dealer_score > 21:
-        print("Dealer busts! Player wins!")
-    elif player_score > dealer_score:
-        print("Player wins!")
-    elif dealer_score > player_score:
-        print("Dealer wins!")
-    else:
-        print("It's a tie!")
+        // Calculate the score of a hand
+        function calculateScore(hand) {
+            let score = 0;
+            let aces = 0;
+            for (let card of hand) {
+                score += values[card.rank];
+                if (card.rank === 'Ace') {
+                    aces++;
+                }
+            }
+            while (score > 21 && aces) {
+                score -= 10;
+                aces--;
+            }
+            return score;
+        }
 
-if __name__ == "__main__":
-    play_blackjack()
+        // Update the player's hand display
+        function showHand(player, hand) {
+            const handElement = document.getElementById(player + '-cards');
+            handElement.innerHTML = '';
+            for (let card of hand) {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.innerHTML = `${card.rank} of ${card.suit}`;
+                handElement.appendChild(cardElement);
+            }
+        }
+
+        // Update the score display
+        function updateScore(player, score) {
+            const scoreElement = document.getElementById(player + '-score');
+            scoreElement.innerText = `Score: ${score}`;
+        }
+
+        // Display the game result
+        function displayResult(message) {
+            const resultElement = document.getElementById('game-result');
+            resultElement.innerText = message;
+        }
+
+        // Deal initial cards
+        function dealInitialCards() {
+            dealCard(playerHand);
+            dealCard(dealerHand);
+            dealCard(playerHand);
+            dealCard(dealerHand);
+            showHand('player', playerHand);
+            showHand('dealer', dealerHand);
+            updateScore('player', calculateScore(playerHand));
+            updateScore('dealer', calculateScore(dealerHand));
+        }
+
+        // Check for the game outcome
+        function checkGameOver() {
+            const playerScore = calculateScore(playerHand);
+            const dealerScore = calculateScore(dealerHand);
+
+            if (playerScore > 21) {
+                displayResult('Player busts! Dealer wins!');
+                gameOver = true;
+            } else if (dealerScore > 21) {
+                displayResult('Dealer busts! Player wins!');
+                gameOver = true;
+            } else if (playerScore === 21) {
+                displayResult('Player wins with Blackjack!');
+                gameOver = true;
+            } else if (dealerScore === 21) {
+                displayResult('Dealer wins with Blackjack!');
+                gameOver = true;
+            }
+        }
+
+        // Dealer's turn (must stand on 17 or higher)
+        function dealerTurn() {
+            let dealerScore = calculateScore(dealerHand);
+            while (dealerScore < 17) {
+                dealCard(dealerHand);
+                showHand('dealer', dealerHand);
+                dealerScore = calculateScore(dealerHand);
+                updateScore('dealer', dealerScore);
+            }
+            checkGameOver();
+        }
+
+        // Initialize the game
+        function startGame() {
+            playerHand = [];
+            dealerHand = [];
+            gameOver = false;
+            createDeck();
+            dealInitialCards();
+            document.getElementById('hit-button').disabled = false;
+            document.getElementById('stand-button').disabled = false;
+            document.getElementById('game-result').innerText = '';
+        }
+
+        // Hit button
+        document.getElementById('hit-button').addEventListener('click', () => {
+            if (!gameOver) {
+                dealCard(playerHand);
+                showHand('player', playerHand);
+                updateScore('player', calculateScore(playerHand));
+                checkGameOver();
+            }
+        });
+
+        // Stand button
+        document.getElementById('stand-button').addEventListener('click', () => {
+            if (!gameOver) {
+                dealerTurn();
+            }
+        });
+
+        // Start a new game
+        startGame();
+    </script>
+
+</body>
+</html>
