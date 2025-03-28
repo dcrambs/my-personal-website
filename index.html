@@ -35,8 +35,11 @@ def deal_initial_cards(deck):
     return [deck.pop(), deck.pop()]
 
 # Show the cards
-def show_hand(player, hand):
-    print(f"{player}'s hand: ", [f"{rank} of {suit}" for rank, suit in hand], "-> Score:", calculate_score(hand))
+def show_hand(player, hand, reveal_dealer=False):
+    if player == "Dealer" and not reveal_dealer:
+        print(f"{player}'s hand: [", hand[0], "and hidden card]")
+    else:
+        print(f"{player}'s hand: ", [f"{rank} of {suit}" for rank, suit in hand], "-> Score:", calculate_score(hand))
 
 # Main game loop
 def play_blackjack():
@@ -48,7 +51,7 @@ def play_blackjack():
 
     # Show hands
     show_hand("Player", player_hand)
-    print("Dealer's hand: [", dealer_hand[0], "and hidden card]")
+    show_hand("Dealer", dealer_hand, reveal_dealer=False)
 
     # Player's turn
     while calculate_score(player_hand) < 21:
@@ -61,11 +64,13 @@ def play_blackjack():
         else:
             print("Invalid move. Please type 'hit' or 'stand'.")
 
-    # Dealer's turn
+    # Dealer's turn (only if player hasn't busted)
     if calculate_score(player_hand) <= 21:
+        print("Dealer's turn:")
+        show_hand("Dealer", dealer_hand, reveal_dealer=True)
         while calculate_score(dealer_hand) < 17:
             dealer_hand.append(deck.pop())
-        show_hand("Dealer", dealer_hand)
+            show_hand("Dealer", dealer_hand, reveal_dealer=True)
 
     # Determine winner
     player_score = calculate_score(player_hand)
